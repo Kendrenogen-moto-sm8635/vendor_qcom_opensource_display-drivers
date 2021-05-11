@@ -264,6 +264,7 @@ enum msm_mdp_conn_property {
 	CONNECTOR_PROP_CABC,
 	CONNECTOR_PROP_ACL,
 	CONNECTOR_PROP_DC,
+	CONNECTOR_PROP_SRE,
 	/* total # of properties */
 	CONNECTOR_PROP_COUNT
 };
@@ -474,6 +475,7 @@ enum msm_param_id {
 	PARAM_CABC_ID,
 	PARAM_ACL_ID,
 	PARAM_DC_ID,
+	PARAM_SRE_ID,
 	PARAM_ID_NUM
 };
 
