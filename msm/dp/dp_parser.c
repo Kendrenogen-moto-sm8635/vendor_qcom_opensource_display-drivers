@@ -845,6 +845,14 @@ end:
 	return;
 }
 
+static int dp_parser_typec_bridge(struct dp_parser *parser)
+{
+        struct device *dev = &parser->pdev->dev;
+        parser->typec_bridge = of_property_read_bool(dev->of_node,
+                        "altmode-typec-bridge");
+        return 0;
+}
+
 static int dp_parser_parse(struct dp_parser *parser)
 {
 	int rc = 0;
@@ -894,6 +902,8 @@ static int dp_parser_parse(struct dp_parser *parser)
 	rc = dp_parser_mst(parser);
 	if (rc)
 		goto err;
+	/* no need to check rc */
+	rc = dp_parser_typec_bridge(parser);
 
 	dp_parser_dsc(parser);
 	dp_parser_fec(parser);
