@@ -1625,7 +1625,7 @@ static void dp_display_stream_disable(struct dp_display_private *dp,
 
 	dp_display_clear_dsc_resources(dp, dp_panel);
 
-	DP_DEBUG("stream_id=%d, active_stream_cnt=%d, tot_dsc_blks_in_use=%d\n",
+	DP_INFO("stream_id=%d, active_stream_cnt=%d, tot_dsc_blks_in_use=%d\n",
 			dp_panel->stream_id, dp->active_stream_cnt,
 			dp->tot_dsc_blks_in_use);
 
@@ -1805,7 +1805,7 @@ static int dp_display_stream_enable(struct dp_display_private *dp,
 	}
 
 
-	DP_DEBUG("dp active_stream_cnt:%d, tot_dsc_blks_in_use=%d\n",
+	DP_INFO("dp active_stream_cnt:%d, tot_dsc_blks_in_use=%d\n",
 			dp->active_stream_cnt, dp->tot_dsc_blks_in_use);
 
 	return rc;
@@ -2444,6 +2444,10 @@ static int dp_display_set_mode(struct dp_display *dp_display, void *panel,
 		return -EINVAL;
 	}
 
+	DP_INFO("## dp_panel[%dx%d:%d:%d] dp_mode[%dx%d:%d]\n",
+		dp_panel->hdisplay, dp_panel->vdisplay, dp_panel->vrefresh, dp_panel->aspect_ratio,
+		mode->timing.h_active, mode->timing.v_active, mode->timing.refresh_rate);
+
 	dp = container_of(dp_display, struct dp_display_private, dp_display);
 	SDE_EVT32_EXTERNAL(SDE_EVTLOG_FUNC_ENTRY, dp->state,
 			mode->timing.h_active, mode->timing.v_active,
@@ -2636,6 +2640,7 @@ static int dp_display_enable(struct dp_display *dp_display, void *panel)
 
 	dp = container_of(dp_display, struct dp_display_private, dp_display);
 
+	DP_INFO("##\n");
 	SDE_EVT32_EXTERNAL(SDE_EVTLOG_FUNC_ENTRY, dp->state);
 	mutex_lock(&dp->session_lock);
 
@@ -2667,6 +2672,7 @@ static int dp_display_enable(struct dp_display *dp_display, void *panel)
 end:
 	mutex_unlock(&dp->session_lock);
 	SDE_EVT32_EXTERNAL(SDE_EVTLOG_FUNC_EXIT, dp->state, rc);
+	DP_INFO("==\n");
 	return rc;
 }
 
@@ -2816,6 +2822,7 @@ clean:
 end:
 	mutex_unlock(&dp->session_lock);
 	SDE_EVT32_EXTERNAL(SDE_EVTLOG_FUNC_EXIT, dp->state);
+	DP_INFO("==\n");
 	return 0;
 }
 
@@ -2848,6 +2855,7 @@ static int dp_display_disable(struct dp_display *dp_display, void *panel)
 		goto end;
 	}
 
+	DP_INFO("##\n");
 	dp_display_stream_disable(dp, dp_panel);
 
 	dp_display_state_remove(DP_STATE_HDCP_ABORTED);
