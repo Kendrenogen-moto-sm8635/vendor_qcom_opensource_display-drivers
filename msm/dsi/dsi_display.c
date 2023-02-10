@@ -9901,6 +9901,7 @@ int dsi_display_enable(struct dsi_display *display)
 error_disable_panel:
 	(void)dsi_panel_disable(display->panel);
 error:
+	display->panel->panel_send_cmd = true;
 	mutex_unlock(&display->display_lock);
 	SDE_EVT32(SDE_EVTLOG_FUNC_EXIT);
 	return rc;
@@ -10017,6 +10018,7 @@ int dsi_display_disable(struct dsi_display *display)
 	SDE_EVT32(SDE_EVTLOG_FUNC_ENTRY);
 	mutex_lock(&display->display_lock);
 
+	display->panel->panel_send_cmd = false;
 	/* cancel delayed work */
 	if (display->poms_pending &&
 			display->panel->poms_align_vsync)
