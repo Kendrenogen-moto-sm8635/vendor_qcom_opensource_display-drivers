@@ -2293,6 +2293,7 @@ static ssize_t debugfs_read_esd_check_mode(struct file *file,
 		break;
 	case ESD_MODE_TE_CHK_REG_RD:
 		rc = snprintf(buf, len, "te_chk_reg_rd");
+		fallthrough;
 	default:
 		rc = snprintf(buf, len, "invalid");
 		break;
@@ -6857,7 +6858,7 @@ int moto_panel_sysfs_add(struct dsi_display *display)
 	ret = sysfs_create_files(&display->drm_conn->kdev->kobj, sde_conn_panel_attrs);
 	dsi_display_ext_init(display);
 
-	DSI_INFO(" sysfs add done, ret\n", ret);
+	DSI_INFO(" sysfs add done, ret %d\n", ret);
 	display->sysfs_add_done = true;
 
 	return ret;
@@ -9721,7 +9722,7 @@ static int dsi_display_chk_esd_recovery(struct dsi_display *display)
 		}
 
 		if (disp_esd_trigger > 0 && disp_esd_trigger < MAX_ESD_RECOVERY_RETRY) {
-			DSI_WARN("ESD: disp_esd_trigger=%d, trigger ESD again\n");
+			DSI_WARN("ESD: disp_esd_trigger=%d, trigger ESD again\n", disp_esd_trigger);
 			dsi_display_trigger_panel_dead_event(display);
 		} else if (disp_esd_trigger >= MAX_ESD_RECOVERY_RETRY) {
 			DSI_ERR("ESD: disp_esd_trigger=%d is Max, calling BUG\n",

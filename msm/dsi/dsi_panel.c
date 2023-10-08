@@ -5093,7 +5093,7 @@ static int dsi_panel_get_pwr_mode(struct dsi_panel *panel, u8 *val)
 
 	display = container_of(panel->host, struct dsi_display, host);
 	if (!display) {
-		DSI_ERR("failed to retrieve display handle\n", display);
+		DSI_ERR("failed to retrieve display handle\n");
 		rc = -EINVAL;
 		goto end;
 	}

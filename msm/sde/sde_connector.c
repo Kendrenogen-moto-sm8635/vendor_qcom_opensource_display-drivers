@@ -1874,7 +1874,7 @@ static int sde_connector_atomic_set_property(struct drm_connector *connector,
 		rc = c_conn->ops.set_dyn_bit_clk(connector, val);
 		if (rc)
 			SDE_ERROR_CONN(c_conn, "dynamic bit clock set failed, rc: %d", rc);
-
+		fallthrough;
 	case CONNECTOR_PROP_HBM:
 		param_info.value = val;
 		param_info.param_idx = PARAM_HBM_ID;
