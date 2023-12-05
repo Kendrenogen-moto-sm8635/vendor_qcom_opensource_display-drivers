@@ -658,7 +658,7 @@ static bool dsi_display_validate_reg_read(struct dsi_panel *panel)
 		for (i = 0; i < len; ++i) {
 			if (config->return_buf[i] !=
 				config->status_value[group + i]) {
-				DRM_ERROR("mismatch: index(%d/%d) expect 0x%x returen 0x%x\n",
+				DRM_ERROR("mismatch: index(%d/%d) expect 0x%02x returen 0x%02x\n",
 						j, i, config->status_value[group + i], config->return_buf[i]);
 				break;
 			}
