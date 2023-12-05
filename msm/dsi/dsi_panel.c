@@ -1258,8 +1258,8 @@ static int dsi_panel_set_local_hbm_param(struct dsi_panel *panel,
 					}else{
 						payload[1] = (alpha&0xff00)>>8;
 						payload[2] = alpha&0xff;
-						payload[3] = 0x14;
-						payload[4] = 0xAC;
+						payload[3] = ((lhbm_config->dc_hybird_threshold+1) & 0xff00) >> 8;
+						payload[4] = (lhbm_config->dc_hybird_threshold+1) & 0xff;
 						DSI_INFO("%s: alpha [%x]=%x%x%x%x  alpha_level = %d backlight level=%d\n ",
 							__func__, payload[0], payload[1], payload[2], payload[3], payload[4],alpha_level,lhbm_config->dbv_level);
 					}
@@ -1349,7 +1349,7 @@ static int dsi_panel_set_hbm(struct dsi_panel *panel,
 		else
 			bl_lvl = HBM_BRIGHTNESS(param_info->value);
 		mutex_lock(&panel->panel_lock);
-		rc = dsi_panel_set_backlight(panel, HBM_BRIGHTNESS(param_info->value));
+		rc = dsi_panel_set_backlight(panel, bl_lvl);
 		mutex_unlock(&panel->panel_lock);
 		if (rc)
 			DSI_ERR("unable to set backlight\n");
@@ -4625,30 +4625,34 @@ static int dsi_panel_parse_local_hbm_config(struct dsi_panel *panel)
 		lhbm_config->lhbm_wait_for_fps_valid = utils->read_bool(utils->data,
 			"qcom,mdss-dsi-panel-lhbm-wait-fps-valid");
 
-		utils->read_u32(utils->data,
-				"qcom,mdss-dsi-panel-local-hbm-wait-fps-count",
-				&(lhbm_config->lhbm_wait_for_fps_count));
+		if(lhbm_config->lhbm_wait_for_fps_valid) {
+			utils->read_u32(utils->data,
+					"qcom,mdss-dsi-panel-local-hbm-wait-fps-count",
+					&(lhbm_config->lhbm_wait_for_fps_count));
 
-		utils->read_u32(utils->data,
-				"qcom,mdss-dsi-panel-local-hbm-wait-fps-interval",
-				&(lhbm_config->lhbm_wait_for_fps_interval));
+			utils->read_u32(utils->data,
+					"qcom,mdss-dsi-panel-local-hbm-wait-fps-interval",
+					&(lhbm_config->lhbm_wait_for_fps_interval));
 
-		lhbm_config->lhbm_not_allowed_fps_list_len = utils->count_u32_elems(utils->data,
-					  "qcom,mdss-dsi-panel-lhbm-not-allowed-fps-list");
-		if (lhbm_config->lhbm_not_allowed_fps_list_len >= 1) {
-			lhbm_config->lhbm_not_allowed_fps_list = kcalloc(lhbm_config->lhbm_not_allowed_fps_list_len,
-					sizeof(u32), GFP_KERNEL);
-			if (!lhbm_config->lhbm_not_allowed_fps_list )
-				return -ENOMEM;
+			lhbm_config->lhbm_not_allowed_fps_list_len = utils->count_u32_elems(utils->data,
+						  "qcom,mdss-dsi-panel-lhbm-not-allowed-fps-list");
+			if (lhbm_config->lhbm_not_allowed_fps_list_len >= 1) {
+				lhbm_config->lhbm_not_allowed_fps_list = kcalloc(lhbm_config->lhbm_not_allowed_fps_list_len,
+						sizeof(u32), GFP_KERNEL);
+				if (!lhbm_config->lhbm_not_allowed_fps_list )
+					return -ENOMEM;
 
-			rc = utils->read_u32_array(utils->data,
-					"qcom,mdss-dsi-panel-lhbm-not-allowed-fps-list",
-					lhbm_config->lhbm_not_allowed_fps_list,
-					lhbm_config->lhbm_not_allowed_fps_list_len);
-			if (rc) {
-				DSI_ERR("[%s] lhbm not allowed fps list parse failed\n", panel->name);
-				return -EINVAL;
+				rc = utils->read_u32_array(utils->data,
+						"qcom,mdss-dsi-panel-lhbm-not-allowed-fps-list",
+						lhbm_config->lhbm_not_allowed_fps_list,
+						lhbm_config->lhbm_not_allowed_fps_list_len);
+				if (rc) {
+					DSI_ERR("[%s] lhbm not allowed fps list parse failed\n", panel->name);
+					return -EINVAL;
+				}
 			}
+		} else {
+			DSI_INFO("%s:qcom,mdss-dsi-panel-lhbm-wait-fps-valid is not defined\n", __func__);
 		}
 
 		rc = utils->read_u32(utils->data,
