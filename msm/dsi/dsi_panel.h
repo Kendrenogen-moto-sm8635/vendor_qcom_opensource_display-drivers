@@ -243,7 +243,6 @@ struct drm_panel_esd_config {
 
 struct drm_panel_cellid_config {
 	bool cellid_enabled;
-
 	struct dsi_panel_cmd_set cellid_cmd;
 	u32 cellid_rlen;
 	u32 cellid_offset;
@@ -268,6 +267,14 @@ struct dsi_panel_lhbm_config {
 	u32 *lhbm_not_allowed_fps_list;
 	u32 lhbm_not_allowed_fps_list_len;
 	u32 	bl_num;
+};
+
+struct dsi_panel_apl_config {
+	bool enable;
+	u32 apl_threshold;
+	struct dsi_panel_cmd_set apl_cmd_on;
+	struct dsi_panel_cmd_set apl_cmd_off;
+	bool apl_state;
 };
 
 enum panel_idx {
@@ -381,6 +388,8 @@ struct dsi_panel {
 	struct dsi_panel_lhbm_config lhbm_config;
 
 	struct drm_panel_cellid_config cellid_config;
+
+	struct dsi_panel_apl_config apl_config;
 
 	struct dsi_parser_utils utils;
 

@@ -962,6 +962,81 @@ static bool dsi_panel_set_hbm_backlight(struct dsi_panel *panel, u32 *bl_lvl)
 	}
 	return false;
 }
+static int dsi_panel_tx_send_mot_cmd(struct dsi_panel *panel,
+		struct dsi_panel_cmd_set *mot_cmds)
+{
+	int rc = 0;
+	int i = 0;
+	struct dsi_cmd_desc *cmds;
+	enum dsi_cmd_set_state state;
+	u32 count;
+	ssize_t len;
+
+	if (!mot_cmds) {
+		DSI_ERR("Invalid Params\n");
+		return -EINVAL;
+	}
+	count = mot_cmds->count;
+	cmds = mot_cmds->cmds;
+	state = mot_cmds->state;
+
+	if (count == 0) {
+		DSI_DEBUG("[%s] No dsi_panel_tx_send_mot_cmd commands to be sent\n",
+			 panel->name);
+		goto error;
+	}
+
+	for (i = 0; i < count; i++) {
+		cmds->ctrl_flags = 0;
+
+		if (state == DSI_CMD_SET_STATE_LP)
+			cmds->msg.flags |= MIPI_DSI_MSG_USE_LPM;
+
+		len = dsi_host_transfer_sub(panel->host, cmds);
+		if (len < 0) {
+			rc = len;
+			DSI_ERR("failed to set dsi_panel_tx_send_mot_cmd  cmds, rc=%d\n", rc);
+			goto error;
+		}
+		if (cmds->post_wait_ms)
+			usleep_range(cmds->post_wait_ms*1000,
+					((cmds->post_wait_ms*1000)+10));
+		cmds++;
+	}
+error:
+	return rc;
+}
+
+static int dsi_panel_set_apl(struct dsi_panel *panel, u32 bl_lvl)
+{
+	int rc = 0;
+	struct dsi_panel_cmd_set *apl_cmd;
+
+	if (!panel || (bl_lvl > 0xffff) ||!panel->panel_initialized) {
+		DSI_ERR("invalid params\n");
+		return -EINVAL;
+	}
+
+	if(bl_lvl > panel->apl_config.apl_threshold && !panel->apl_config.apl_state){
+		apl_cmd = &panel->apl_config.apl_cmd_on;
+		rc = dsi_panel_tx_send_mot_cmd(panel, apl_cmd);
+		panel->apl_config.apl_state = true;
+		DSI_INFO("apl config apl_config.apl_threshold = %d apl_config.apl_state =%d,bl_lvl = %d\n",
+                      panel->apl_config.apl_threshold,panel->apl_config.apl_state,bl_lvl);
+	}
+	else if(bl_lvl <= panel->apl_config.apl_threshold && panel->apl_config.apl_state){
+		apl_cmd = &panel->apl_config.apl_cmd_off;
+		rc = dsi_panel_tx_send_mot_cmd(panel, apl_cmd);
+		panel->apl_config.apl_state = false;
+		DSI_INFO("apl config apl_config.apl_threshold = %d apl_config.apl_state =%d,bl_lvl = %d\n",
+                      panel->apl_config.apl_threshold,panel->apl_config.apl_state,bl_lvl);
+	}
+	if (rc)
+		DSI_ERR("[%s] failed to send DSI_CMD_SET_APL cmd, rc=%d\n",
+		       panel->name, rc);
+
+	return rc;
+}
 
 int dsi_panel_set_backlight(struct dsi_panel *panel, u32 bl_lvl)
 {
@@ -985,6 +1060,8 @@ int dsi_panel_set_backlight(struct dsi_panel *panel, u32 bl_lvl)
 		rc = backlight_device_set_brightness(bl->raw_bd, bl_lvl);
 		break;
 	case DSI_BACKLIGHT_DCS:
+		if(panel->apl_config.enable)
+			rc = dsi_panel_set_apl(panel, bl_lvl);
 		rc = dsi_panel_update_backlight(panel, bl_lvl);
 		break;
 	case DSI_BACKLIGHT_DUMMY:
@@ -2734,6 +2811,8 @@ const char *cmd_set_prop_map[DSI_CMD_SET_MAX] = {
 	"qcom,mdss-dsi-dfps-120-command",
 	"qcom,mdss-dsi-dfps-144-command",
 	"qcom,mdss-dsi-panel-cellid-command",
+	"qcom,mdss-dsi-panel-apl-on-command",
+	"qcom,mdss-dsi-panel-apl-off-command",
 };
 
 const char *cmd_set_state_map[DSI_CMD_SET_MAX] = {
@@ -2783,6 +2862,8 @@ const char *cmd_set_state_map[DSI_CMD_SET_MAX] = {
 	"qcom,mdss-dsi-dfps-120-command-state",
 	"qcom,mdss-dsi-dfps-144-command-state",
 	"qcom,mdss-dsi-panel-cellid-command-state",
+	"qcom,mdss-dsi-panel-apl-on-command-state",
+	"qcom,mdss-dsi-panel-apl-off-command-state",
 };
 
 int dsi_panel_get_cmd_pkt_count(const char *data, u32 length, u32 *cnt)
@@ -4748,6 +4829,57 @@ static void dsi_panel_cellid_config_deinit(struct drm_panel_cellid_config *celli
 		kfree(cellid_config->return_buf);
 }
 
+static int dsi_panel_parse_apl_config(struct dsi_panel *panel)
+{
+	int rc = 0;
+	struct dsi_panel_apl_config *apl_config;
+	struct dsi_parser_utils *utils = &panel->utils;
+
+	if (!panel) {
+		DSI_ERR("Invalid Params\n");
+		return -EINVAL;
+	}
+
+	apl_config = &panel->apl_config;
+	if (!apl_config)
+		return -EINVAL;
+
+	apl_config->enable = utils->read_bool(utils->data,
+		"qcom,apl-enabled");
+
+	if (!apl_config->enable)
+		return 0;
+	rc = utils->read_u32(utils->data,
+			"qcom,mdss-dsi-panel-APL-THRESHOLD-BL",
+			&(apl_config->apl_threshold));
+	if (rc) {
+		DSI_ERR("%s:qcom,mdss-dsi-panel-APL-THRESHOLD-BL is not defined, set it to 0\n", __func__);
+		apl_config->apl_threshold = 0;
+		goto error;
+	}
+
+	dsi_panel_parse_cmd_sets_sub(&apl_config->apl_cmd_on,
+				DSI_CMD_SET_APL_ON, utils);
+	if (!apl_config->apl_cmd_on.count) {
+		DSI_ERR("panel apl_cmd_on command parsing failed\n");
+		rc = -EINVAL;
+		goto error;
+	}
+
+	dsi_panel_parse_cmd_sets_sub(&apl_config->apl_cmd_off,
+				DSI_CMD_SET_APL_OFF, utils);
+	if (!apl_config->apl_cmd_off.count) {
+		DSI_ERR("panel apl_cmd_off command parsing failed\n");
+		rc = -EINVAL;
+		goto error;
+	}
+	apl_config->apl_state = false;
+
+	return 0;
+error:
+	apl_config->enable = false;
+	return rc;
+}
 
 static void dsi_panel_update_util(struct dsi_panel *panel,
 				  struct device_node *parser_node)
@@ -5131,6 +5263,10 @@ struct dsi_panel *dsi_panel_get(struct device *parent,
 	rc = dsi_panel_parse_cellid_config(panel);
 	if (rc)
 		DSI_DEBUG("failed to parse local cellid config, rc=%d\n", rc);
+
+	rc = dsi_panel_parse_apl_config(panel);
+	if (rc)
+		DSI_DEBUG("failed to parse local apl config, rc=%d\n", rc);
 
 	rc = dsi_panel_vreg_get(panel);
 	if (rc) {
