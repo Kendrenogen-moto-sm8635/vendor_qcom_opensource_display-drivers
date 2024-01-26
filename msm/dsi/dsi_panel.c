@@ -527,6 +527,8 @@ static int dsi_panel_power_on(struct dsi_panel *panel)
 	if (gpio_is_valid(panel->reset_config.vio_en_gpio))
 		gpio_set_value(panel->reset_config.vio_en_gpio, 1);
 
+	if (gpio_is_valid(panel->reset_config.vdd_en_gpio))
+		gpio_set_value(panel->reset_config.vdd_en_gpio, 1);
 	pr_info("[drm] dsi_pwr_enable_regulator\n");
 
 	rc = dsi_pwr_enable_regulator(&panel->power_info, true);
@@ -535,8 +537,7 @@ static int dsi_panel_power_on(struct dsi_panel *panel)
 				panel->name, rc);
 		goto exit;
 	}
-	if (gpio_is_valid(panel->reset_config.vdd_en_gpio))
-		gpio_set_value(panel->reset_config.vdd_en_gpio, 1);
+
 	mdelay(5);
 	if (gpio_is_valid(panel->reset_config.vci_en_gpio))
 		gpio_set_value(panel->reset_config.vci_en_gpio, 1);
