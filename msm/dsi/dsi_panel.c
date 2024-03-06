@@ -2814,6 +2814,8 @@ const char *cmd_set_prop_map[DSI_CMD_SET_MAX] = {
 	"qcom,mdss-dsi-panel-cellid-command",
 	"qcom,mdss-dsi-panel-apl-on-command",
 	"qcom,mdss-dsi-panel-apl-off-command",
+	"qcom,mdss-dsi-pcd-check-enable-command",
+	"qcom,mdss-dsi-pcd-check-disable-command",
 };
 
 const char *cmd_set_state_map[DSI_CMD_SET_MAX] = {
@@ -2865,6 +2867,8 @@ const char *cmd_set_state_map[DSI_CMD_SET_MAX] = {
 	"qcom,mdss-dsi-panel-cellid-command-state",
 	"qcom,mdss-dsi-panel-apl-on-command-state",
 	"qcom,mdss-dsi-panel-apl-off-command-state",
+	"qcom,mdss-dsi-pcd-check-enable-command-state",
+	"qcom,mdss-dsi-pcd-check-disable-command-state",
 };
 
 int dsi_panel_get_cmd_pkt_count(const char *data, u32 length, u32 *cnt)
@@ -5079,6 +5083,8 @@ static int dsi_panel_parse_mot_panel_config(struct dsi_panel *panel,
 				"qcom,mot_nt37705A_read_cellid");
 
 	panel->esd_first_check = false;
+	panel->check_pcd = of_property_read_bool(of_node,
+				"qcom,check_pcd");
 	return rc;
 }
 
@@ -6889,4 +6895,27 @@ int dsi_panel_tx_cellid_cmd(struct dsi_panel *panel)
 error:
 	dsi_panel_release_panel_lock(panel);
 	return rc;
+}
+
+void set_panelpcdcheck_enable(struct dsi_panel *panel)
+{
+	int rc = 0;
+
+	if (!panel) {
+		DSI_ERR("Invalid params\n");
+	}
+	mutex_lock(&panel->panel_lock);
+	if(panel->panelPcdCheck_enable > 0){
+		printk("Panel pcd check enable\n");
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_PANEL_PCD_ENABLE);
+	}else{
+		printk("susan Panel pcd check disable\n");
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_PANEL_PCD_DISABLE);
+	}
+	if (rc)
+		DSI_ERR("[%s] failed to send DSI_CMD_SET_PANEL_PCD_DISABLE cmds, rc=%d\n",
+		       panel->name, rc);
+
+	mutex_unlock(&panel->panel_lock);
+
 }

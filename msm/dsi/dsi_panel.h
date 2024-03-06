@@ -450,6 +450,8 @@ struct dsi_panel {
 	struct msm_param_info curDCModeParaInfo;
 	bool panel_send_cmd;
 	bool esd_first_check;
+	bool check_pcd;
+	int panelPcdCheck_enable;
 };
 
 bool dsi_display_all_displays_dead(void);
@@ -602,4 +604,5 @@ int dsi_panel_set_elvss_dim_off(struct dsi_panel *panel, u8 val);
 int dsi_panel_parse_elvss_config(struct dsi_panel *panel, u8 elv_vl);
 int dsi_panel_dfps_send_cmd(struct dsi_panel *panel);
 int dsi_panel_tx_cellid_cmd(struct dsi_panel *panel);
+void set_panelpcdcheck_enable(struct dsi_panel *panel);
 #endif /* _DSI_PANEL_H_ */
