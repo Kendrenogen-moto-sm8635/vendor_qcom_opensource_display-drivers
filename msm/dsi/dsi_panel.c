@@ -1422,8 +1422,16 @@ static int dsi_panel_set_hbm(struct dsi_panel *panel,
 	if (rc < 0) {
 		DSI_ERR("%s: failed to send param cmds. ret=%d\n", __func__, rc);
 	} else {
-		if(lhbm_config->enable)
-			bl_lvl = lhbm_config->dbv_level;
+		if(lhbm_config->enable){
+			if(lhbm_config->dbv_level > 0) {
+				bl_lvl = lhbm_config->dbv_level;
+				pr_info("Current lhbm_config->dbv_level is not 0, value is %d\n", bl_lvl);
+			}
+			else{
+				bl_lvl = BRIGHTNESS_HBM_OFF;
+				pr_info("Current lhbm_config->dbv_level is 0!\n");
+			}
+		}
 		else
 			bl_lvl = HBM_BRIGHTNESS(param_info->value);
 		mutex_lock(&panel->panel_lock);
