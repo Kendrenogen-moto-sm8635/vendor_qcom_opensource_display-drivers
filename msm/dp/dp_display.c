@@ -2476,6 +2476,10 @@ static int dp_display_set_mode(struct dp_display *dp_display, void *panel,
 		dp->mst.cbs.set_mst_mode_params(&dp->dp_display, mode);
 
 	dp_panel->pinfo = mode->timing;
+	if ( dsc_en == false ) {
+		dp_panel->pinfo.comp_info.comp_type = MSM_DISPLAY_COMPRESSION_NONE;
+		dp_panel->pinfo.comp_info.enabled = false;
+	}
 	mutex_unlock(&dp->session_lock);
 	SDE_EVT32_EXTERNAL(SDE_EVTLOG_FUNC_EXIT, dp->state);
 

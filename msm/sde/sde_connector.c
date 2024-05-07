@@ -441,7 +441,7 @@ int sde_connector_get_dither_cfg(struct drm_connector *conn,
 	return 0;
 }
 
-static void sde_connector_get_avail_res_info(struct drm_connector *conn,
+void sde_connector_get_avail_res_info(struct drm_connector *conn,
 		struct msm_resource_caps_info *avail_res)
 {
 	struct sde_kms *sde_kms;

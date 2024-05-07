@@ -1420,4 +1420,11 @@ bool sde_connector_is_line_insertion_supported(struct sde_connector *sde_conn);
  */
 void sde_connector_report_panel_dead(struct sde_connector *conn, bool skip_pre_kickoff);
 
+/*
+ *sde_connector_get_avail_res_info - get available resource information
+ * @conn: Pointer to sde connector structure
+ * @avail_res: Pointer to available resources
+ */
+void sde_connector_get_avail_res_info(struct drm_connector *conn,
+		struct msm_resource_caps_info *avail_res);
 #endif /* _SDE_CONNECTOR_H_ */
